@@ -116,17 +116,11 @@ impl Spreadsheet {
     #[wasm_bindgen]
     pub fn get_cell_split(
         &self,
-        col_from_js: JsValue,
-        row_from_js: JsValue,
+        col_from_js: usize,
+        row_from_js: usize,
     ) -> Result<JsValue, JsValue> {
-        let col: String = match col_from_js.as_string() {
-            Some(s) => s,
-            None => "".to_string(),
-        };
-        let row: String = match row_from_js.as_string() {
-            Some(s) => s,
-            None => "".to_string(),
-        };
+        let col = get_column_header(col_from_js);
+        let row = (row_from_js+1).to_string();
         self.trie.get(col, row)
     }
 
@@ -386,4 +380,16 @@ pub fn get_cell_ref_split(ref_str: &str) -> (String, String) {
     }
 
     (col_of_cell, row_of_cell)
+}
+pub fn get_column_header(col_index: usize) -> String {
+    let mut label = String::new();
+    let mut n = col_index + 1;
+
+    while n > 0 {
+        let remainder = (n - 1) % 26;
+        label = format!("{}{}", (65 + remainder as u8) as char, label);
+        n = (n - 1) / 26;
+    }
+
+    label
 }

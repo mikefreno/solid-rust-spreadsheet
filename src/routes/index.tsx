@@ -7,8 +7,8 @@ import { loadData, saveData } from "../utils/SpreadSheetFileFunctions";
 import { Cell, getColumnHeader } from "~/utils/utils";
 import init, { Spreadsheet } from "~/wasm/pkg/wasm_trie";
 
-const COLUMNS = 5;
-const ROWS = 5;
+const COLUMNS = 100;
+const ROWS = 100;
 
 export default function SpreadsheetEditor() {
   const [data, setData] = createSignal<Spreadsheet>();
@@ -179,8 +179,7 @@ export default function SpreadsheetEditor() {
             {data() &&
               Array.from({ length: COLUMNS }, (_, colIndex) => {
                 const refStr = `${getColumnHeader(colIndex)}${rowIndex + 1}`;
-                const cell = data()?.get_cell(refStr);
-                console.log(cell);
+                const cell = data()?.get_cell_split(colIndex, rowIndex);
 
                 return (
                   <input
