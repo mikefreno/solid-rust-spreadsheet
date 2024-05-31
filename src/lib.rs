@@ -159,7 +159,8 @@ impl Spreadsheet {
         self.trie.insert_cell(value.to_owned(), None, &ref_str);
     }
 
-    fn update_dependent_cells(&mut self, ref_str: &str) {
+    #[wasm_bindgen]
+    pub fn update_dependent_cells(&mut self, ref_str: &str) {
         let mut visited = HashSet::new();
         let mut stack = vec![ref_str.to_string()];
         while let Some(current_ref_str) = stack.pop() {
@@ -186,7 +187,8 @@ impl Spreadsheet {
         }
     }
 
-    fn get_dependencies(&self, formula: &str) -> Vec<String> {
+    #[wasm_bindgen]
+    pub fn get_dependencies(&self, formula: &str) -> Vec<String> {
         let regex = regex::Regex::new(r"([A-Z]+[0-9]+)").unwrap();
         regex
             .find_iter(formula)

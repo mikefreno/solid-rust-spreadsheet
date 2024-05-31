@@ -13,7 +13,7 @@ import { Spreadsheet } from "~/wasm/pkg/wasm_trie";
 export const saveData = (
   spreadsheetName: string | undefined,
   setShowModal: Setter<boolean>,
-  data: Spreadsheet,
+  data: Spreadsheet | undefined,
 ) => {
   if (!spreadsheetName) {
     setShowModal(true);
@@ -55,13 +55,7 @@ export const saveData = (
 
 export const loadData = (
   file: File,
-  ROWS: number,
-  COLUMNS: number,
-  initializeSpreadsheet: (
-    rows: number,
-    cols: number,
-    data?: Spreadsheet,
-  ) => void,
+  initializeSpreadsheet: (data?: Spreadsheet) => void,
   setSpreadsheetName: Setter<string>,
 ) => {
   const reader = new FileReader();
@@ -78,16 +72,11 @@ export const loadData = (
         const col = getColumnHeader(colIndex);
         const rowStr = (rowIndex + 1).toString();
 
-        const cellData: Cell = {
-          value: cell,
-          formula: null,
-        };
-
         loadedData.init_cell(col + rowStr, cell);
       });
     });
 
-    initializeSpreadsheet(ROWS, COLUMNS, loadedData);
+    initializeSpreadsheet(loadedData);
     setSpreadsheetName(file.name.replace(".csv", ""));
   };
   reader.readAsText(file);

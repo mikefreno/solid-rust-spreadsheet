@@ -18,19 +18,13 @@ export default function SpreadsheetEditor() {
   const [showModal, setShowModal] = createSignal(false);
 
   // Function to initialize the spreadsheet with empty cells
-  const initializeSpreadsheet = (
-    rows: number,
-    cols: number,
-    data?: Spreadsheet,
-  ) => {
-    const spreadsheet = new Spreadsheet();
-    for (let row = 1; row <= rows; row++) {
-      for (let col = 0; col < cols; col++) {
-        const refStr = `${getColumnHeader(col)}${row}`;
-        spreadsheet.init_cell(refStr, null);
-      }
+  const initializeSpreadsheet = (data?: Spreadsheet) => {
+    if (data) {
+      setData(data);
+    } else {
+      const spreadsheet = new Spreadsheet();
+      setData(spreadsheet);
     }
-    setData(spreadsheet);
   };
 
   createEffect(() => {
@@ -38,12 +32,14 @@ export default function SpreadsheetEditor() {
     const cell: Cell = data()?.get_cell(refStr);
     if (cell) {
       setInputBarValue(cell.formula ? cell.formula : cell.value);
+    } else {
+      setInputBarValue("");
     }
   });
 
   onMount(async () => {
     await init();
-    initializeSpreadsheet(ROWS, COLUMNS);
+    initializeSpreadsheet();
   });
 
   return (
@@ -78,7 +74,10 @@ export default function SpreadsheetEditor() {
                 <button
                   type="button"
                   class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm"
-                  onClick={() => setShowModal(false)}
+                  onClick={() => {
+                    setShowModal(false);
+                    saveData(spreadsheetName(), setShowModal, data());
+                  }}
                 >
                   Save
                 </button>
@@ -103,8 +102,6 @@ export default function SpreadsheetEditor() {
               e.target.files &&
               loadData(
                 e.target.files[0],
-                ROWS,
-                COLUMNS,
                 initializeSpreadsheet,
                 setSpreadsheetName,
               )
@@ -180,8 +177,7 @@ export default function SpreadsheetEditor() {
               Array.from({ length: COLUMNS }, (_, colIndex) => {
                 const refStr = `${getColumnHeader(colIndex)}${rowIndex + 1}`;
                 const cell = data()?.get_cell_split(colIndex, rowIndex);
-
-                return (
+                return cell ? (
                   <input
                     type="text"
                     class={`border min-w-12 min-h-4 ${
@@ -212,6 +208,47 @@ export default function SpreadsheetEditor() {
                     onChange={(e) => {
                       const value = (e.target as HTMLInputElement).value;
                       setData(data()?.set_cell_value(refStr, value));
+                    }}
+                    onKeyPress={(e) => {
+                      if (e.key === "Enter") {
+                        const value = (e.target as HTMLInputElement).value;
+                        setData(data()?.set_cell_value(refStr, value));
+                      }
+                    }}
+                  />
+                ) : (
+                  <input
+                    type="text"
+                    class={`border min-w-12 min-h-4 ${
+                      isSelectedColumn(colIndex, rowIndex, selectedCell()) &&
+                      isSelectedRow(rowIndex, colIndex, selectedCell())
+                        ? "bg-green-200 border-green-400"
+                        : isSelectedColumn(
+                            colIndex,
+                            rowIndex,
+                            selectedCell(),
+                          ) || isSelectedRow(rowIndex, colIndex, selectedCell())
+                        ? "bg-green-100 border-gray-400 hover:bg-gray-200"
+                        : "border-gray-400 hover:bg-gray-200"
+                    }`}
+                    onFocus={(e) => {
+                      setSelectedCell(refStr);
+                      data()?.init_cell(refStr, "");
+                    }}
+                    onInput={(e) => {
+                      const value = (e.target as HTMLInputElement).value;
+                      setInputBarValue(value);
+                    }}
+                    onChange={(e) => {
+                      const value = (e.target as HTMLInputElement).value;
+                      if (
+                        value.startsWith("=") ||
+                        data()?.get_dependencies(refStr).length > 0
+                      ) {
+                        setData(data()?.set_cell_value(refStr, value));
+                      } else {
+                        data()?.set_cell_value(refStr, value);
+                      }
                     }}
                     onKeyPress={(e) => {
                       if (e.key === "Enter") {
